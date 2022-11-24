@@ -111,11 +111,12 @@ namespace Xamarin.CommunityToolkit.UI.Views
 
 		void SetEvents()
 		{
-			if (Element?.IsLightDismissEnabled is true)
-				Closing += OnClosing;
+			Closing += OnClosing;
 
 			if (Element != null)
 				Element.Dismissed += OnDismissed;
+
+			Opened += OnOpened;
 		}
 
 		void SetSize()
@@ -174,10 +175,8 @@ namespace Xamarin.CommunityToolkit.UI.Views
 
 			flyoutStyle.Setters.Add(new Windows.UI.Xaml.Setter(FlyoutPresenter.BackgroundProperty, Element.Color.ToWindowsColor()));
 
-#if UWP_18362
 			if (Element.Color == Color.Transparent)
 				flyoutStyle.Setters.Add(new Windows.UI.Xaml.Setter(FlyoutPresenter.IsDefaultShadowEnabledProperty, false));
-#endif
 		}
 
 		void ApplyStyles()
@@ -252,16 +251,31 @@ namespace Xamarin.CommunityToolkit.UI.Views
 
 		UIElement? IVisualElementRenderer.GetNativeElement() => Control;
 
+		// The UWP PopupRenderer needs to maintain it's own version of
+		// `isOpen` because our popup lifecycle differs slightly from
+		// the UWP version of `IsOpen`. Without this variable usages
+		// in OnDismissed and OnClosing will not work as expected.
+		bool isOpen = true;
+
 		void OnDismissed(object? sender, PopupDismissedEventArgs e)
 		{
+			if (!isOpen)
+				return;
+
+			isOpen = false;
 			Hide();
 		}
 
 		void OnClosing(object? sender, object e)
 		{
-			if (IsOpen && Element?.IsLightDismissEnabled is true)
+			if (isOpen && Element?.IsLightDismissEnabled is true)
 				Element.LightDismiss();
+			if (isOpen && e is FlyoutBaseClosingEventArgs args)
+				args.Cancel = true;
 		}
+
+		void OnOpened(object sender, object e) =>
+			isOpen = true;
 
 		public void Dispose()
 		{
@@ -282,7 +296,8 @@ namespace Xamarin.CommunityToolkit.UI.Views
 				Element = null;
 				Control = null;
 
-				Closed -= OnClosing;
+				Closing -= OnClosing;
+				Opened -= OnOpened;
 			}
 
 			isDisposed = true;

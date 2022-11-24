@@ -41,7 +41,7 @@ namespace Xamarin.CommunityToolkit.UI.Views
 		/// Gets or sets the <see cref="View"/> content to render in the Popup.
 		/// </summary>
 		/// <remarks>
-		/// The View can be or type: <see cref="View"/>, <see cref="ContentPage"/> or <see cref="NavigationPage"/>
+		/// The View can be of type: <see cref="View"/>, <see cref="ContentPage"/> or <see cref="NavigationPage"/>
 		/// </remarks>
 		public virtual View? Content
 		{
@@ -95,7 +95,7 @@ namespace Xamarin.CommunityToolkit.UI.Views
 		/// <remarks>
 		/// The Popup will always try to constrain the actual size of the <see cref="Popup" />
 		/// to the <see cref="Popup" /> of the View unless a <see cref="Size"/> is specified.
-		/// If the <see cref="Popup" /> contiains <see cref="LayoutOptions"/> a <see cref="Size"/>
+		/// If the <see cref="Popup" /> contains <see cref="LayoutOptions"/> a <see cref="Size"/>
 		/// will be required. This will allow the View to have a concept of <see cref="Size"/>
 		/// that varies from the actual <see cref="Size"/> of the <see cref="Popup" />
 		/// </remarks>
@@ -110,6 +110,7 @@ namespace Xamarin.CommunityToolkit.UI.Views
 		/// </summary>
 		/// <remarks>
 		/// When true and the user taps outside of the popup it will dismiss.
+		/// On Android - when false the hardware back button is disabled.
 		/// </remarks>
 		public bool IsLightDismissEnabled { get; set; }
 
@@ -138,7 +139,7 @@ namespace Xamarin.CommunityToolkit.UI.Views
 		/// The results to add to the <see cref="PopupDismissedEventArgs"/>.
 		/// </param>
 		protected void OnDismissed(object? result) =>
-			dismissWeakEventManager.RaiseEvent(this, new PopupDismissedEventArgs(result), nameof(Dismissed));
+			dismissWeakEventManager.RaiseEvent(this, new PopupDismissedEventArgs(result, false), nameof(Dismissed));
 
 		/// <summary>
 		/// Invokes the <see cref="Opened"/> event.
@@ -150,17 +151,8 @@ namespace Xamarin.CommunityToolkit.UI.Views
 		/// Invoked when the popup is light dismissed. In other words when the
 		/// user taps outside of the popup and it closes.
 		/// </summary>
-		protected internal virtual void LightDismiss()
-		{
-			// Note 1/9/2021
-			// Left empty by design
-			//
-			// This method needs to be left empty as it is not
-			// required for a child class to have an implementation
-			// of LightDismiss. This means if a renderer invokes
-			// this method nothing will happen unless the child
-			// class has an implementation.
-		}
+		protected internal virtual void LightDismiss() =>
+			dismissWeakEventManager.RaiseEvent(this, new PopupDismissedEventArgs(null, true), nameof(Dismissed));
 
 		protected override void OnBindingContextChanged()
 		{

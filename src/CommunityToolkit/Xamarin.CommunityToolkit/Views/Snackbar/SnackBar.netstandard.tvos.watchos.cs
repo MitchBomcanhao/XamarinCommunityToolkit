@@ -1,11 +1,12 @@
 ﻿using System;
+using System.Threading.Tasks;
 using Xamarin.CommunityToolkit.UI.Views.Options;
 using Xamarin.Forms;
 
 namespace Xamarin.CommunityToolkit.UI.Views
 {
-	class SnackBar
+	internal partial class SnackBar
 	{
-		internal void Show(Page sender, SnackBarOptions arguments) => throw new PlatformNotSupportedException();
+		internal partial ValueTask Show(VisualElement sender, SnackBarOptions arguments) => throw new PlatformNotSupportedException();
 	}
 }

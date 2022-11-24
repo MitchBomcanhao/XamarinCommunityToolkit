@@ -1,26 +1,26 @@
-﻿using System;
+using System;
 using System.Threading.Tasks;
+using Xamarin.CommunityToolkit.UI.Views.Helpers;
 using Xamarin.CommunityToolkit.UI.Views.Options;
 using Xamarin.CommunityToolkit.Views.Snackbar.Helpers;
 using Xamarin.Forms;
 #if __IOS__
 using UIKit;
 using Xamarin.Forms.Platform.iOS;
-using Xamarin.CommunityToolkit.UI.Views.Helpers.iOS;
 #elif __MACOS__
 using AppKit;
-using Xamarin.CommunityToolkit.UI.Views.Helpers.macOS;
 using Xamarin.Forms.Platform.MacOS;
 #endif
 
 namespace Xamarin.CommunityToolkit.UI.Views
 {
-	class SnackBar
+	partial class SnackBar
 	{
-		internal void Show(Page sender, SnackBarOptions arguments)
+		internal partial ValueTask Show(VisualElement sender, SnackBarOptions arguments)
 		{
 			var snackBar = NativeSnackBar.MakeSnackBar(arguments.MessageOptions.Message)
-							.SetDuration(arguments.Duration.TotalMilliseconds)
+							.SetDuration(arguments.Duration)
+							.SetCornerRadius(arguments.CornerRadius)
 							.SetTimeoutAction(() =>
 							{
 								arguments.SetResult(false);
@@ -55,9 +55,13 @@ namespace Xamarin.CommunityToolkit.UI.Views
 
 			if (!UIDevice.CurrentDevice.CheckSystemVersion(11, 0))
 			{
-				var renderer = Platform.GetRenderer(sender);
-				snackBar.SetParentController(renderer.ViewController);
+				snackBar.Layout.PaddingTop = (nfloat)arguments.MessageOptions.Padding.Top;
+				snackBar.Layout.PaddingLeft = (nfloat)arguments.MessageOptions.Padding.Left;
+				snackBar.Layout.PaddingBottom = (nfloat)arguments.MessageOptions.Padding.Bottom;
+				snackBar.Layout.PaddingRight = (nfloat)arguments.MessageOptions.Padding.Right;
 			}
+
+			snackBar.Appearance.TextAlignment = arguments.IsRtl ? UITextAlignment.Right : UITextAlignment.Left;
 #elif __MACOS__
 			if (arguments.BackgroundColor != Color.Default)
 			{
@@ -76,6 +80,11 @@ namespace Xamarin.CommunityToolkit.UI.Views
 
 			snackBar.Appearance.TextAlignment = arguments.IsRtl ? NSTextAlignment.Right : NSTextAlignment.Left;
 #endif
+			if (sender is not Page)
+			{
+				var renderer = Platform.GetRenderer(sender);
+				snackBar.SetAnchor(renderer.NativeView);
+			}
 
 			foreach (var action in arguments.Actions)
 			{
@@ -92,7 +101,7 @@ namespace Xamarin.CommunityToolkit.UI.Views
 
 				if (action.Font != Font.Default)
 				{
-					actionButton.Font = action.Font.ToUIFont();
+					actionButton.TitleLabel.Font = action.Font.ToUIFont();
 				}
 
 				if (action.ForegroundColor != Color.Default)
@@ -113,17 +122,15 @@ namespace Xamarin.CommunityToolkit.UI.Views
 				actionButton.SetAction(async () =>
 				{
 					snackBar.Dismiss();
-
-					if (action.Action != null)
-						await action.Action();
-
-					arguments.SetResult(true);
+					await OnActionClick(action, arguments).ConfigureAwait(false);
 				});
 
 				snackBar.Actions.Add(actionButton);
 			}
 
 			snackBar.Show();
+
+			return default;
 		}
 	}
 }

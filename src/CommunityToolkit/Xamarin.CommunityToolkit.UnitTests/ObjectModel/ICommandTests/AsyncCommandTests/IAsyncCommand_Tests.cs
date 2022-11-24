@@ -34,6 +34,18 @@ namespace Xamarin.CommunityToolkit.UnitTests.ObjectModel.ICommandTests.AsyncComm
 		}
 
 		[Test]
+		public void IAsyncCommand_Execute_InvalidNullableTypeParameter()
+		{
+			// Arrange
+			IAsyncCommand<string, bool> command = new AsyncCommand<string, bool>(StringParameterTask, CanExecuteTrue);
+
+			// Act
+
+			// Assert
+			Assert.Throws<InvalidCommandParameterException>(() => command.Execute((int?)500));
+		}
+
+		[Test]
 		public void IAsyncCommand_Execute_InvalidReferenceParameter()
 		{
 			// Arrange
@@ -54,7 +66,7 @@ namespace Xamarin.CommunityToolkit.UnitTests.ObjectModel.ICommandTests.AsyncComm
 			// Act
 
 			// Assert
-			Assert.Throws<InvalidCommandParameterException>(() => command.CanExecute(true));
+			Assert.Throws<InvalidCommandParameterException>(() => command.CanExecute((int?)500));
 		}
 
 		[TestCase("Hello")]

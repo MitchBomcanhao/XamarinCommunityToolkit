@@ -1,4 +1,6 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
+using System.Threading.Tasks;
 using System.Timers;
 using Gtk;
 using Pango;
@@ -9,13 +11,13 @@ using Xamarin.Forms.Platform.GTK.Extensions;
 
 namespace Xamarin.CommunityToolkit.UI.Views
 {
-	class SnackBar
+	internal partial class SnackBar
 	{
 		Timer? snackBarTimer;
 
-		public void Show(Page page, SnackBarOptions arguments)
+		internal partial ValueTask Show(VisualElement visualElement, SnackBarOptions arguments)
 		{
-			var mainWindow = (Platform.GetRenderer(page).Container.Child as Forms.Platform.GTK.Controls.Page)?.Children[0] as VBox;
+			var mainWindow = (Platform.GetRenderer(visualElement).Container.Child as Forms.Platform.GTK.Controls.Page)?.Children[0] as VBox;
 			var snackBarLayout = GetSnackBarLayout(mainWindow, arguments);
 
 			AddSnackBarContainer(mainWindow, snackBarLayout);
@@ -29,6 +31,7 @@ namespace Xamarin.CommunityToolkit.UI.Views
 			};
 
 			snackBarTimer.Start();
+			return default;
 		}
 
 		HBox GetSnackBarLayout(Container? container, SnackBarOptions arguments)
@@ -53,14 +56,10 @@ namespace Xamarin.CommunityToolkit.UI.Views
 				button.ModifyBg(StateType.Normal, action.BackgroundColor.ToGtkColor());
 				button.ModifyFg(StateType.Normal, action.ForegroundColor.ToGtkColor());
 
-				button.Clicked += async (sender, e) =>
+				button.Clicked += async (_, _) =>
 				{
 					snackBarTimer?.Stop();
-
-					if (action.Action != null)
-						await action.Action();
-
-					arguments.SetResult(true);
+					await OnActionClick(action, arguments).ConfigureAwait(false);
 					container?.Remove(snackBarLayout);
 				};
 

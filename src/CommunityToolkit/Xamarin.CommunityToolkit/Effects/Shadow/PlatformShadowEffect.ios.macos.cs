@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Linq;
 using CoreGraphics;
 using Xamarin.CommunityToolkit.Effects;
 using Xamarin.Forms;
@@ -22,23 +23,27 @@ namespace Xamarin.CommunityToolkit.iOS.Effects
 namespace Xamarin.CommunityToolkit.macOS.Effects
 #endif
 {
-	public class PlatformShadowEffect : PlatformEffect
+public class PlatformShadowEffect : PlatformEffect
 {
 	const float defaultRadius = 10f;
 
 	const float defaultOpacity = .5f;
 
-	NativeView? View => Control ?? Container;
+	NativeView? View
+	{
+		get
+		{
+			var view = Control ?? Container;
+			return Element is Frame ? view?.Subviews.FirstOrDefault() ?? view : view;
+		}
+	}
 
 	protected override void OnAttached()
 	{
 		if (View == null)
 			return;
 
-		UpdateColor(View);
-		UpdateOpacity(View);
-		UpdateRadius(View);
-		UpdateOffset(View);
+		Update(View);
 	}
 
 	protected override void OnDetached()
@@ -58,18 +63,24 @@ namespace Xamarin.CommunityToolkit.macOS.Effects
 
 		switch (args.PropertyName)
 		{
-			case nameof(ShadowEffect.ColorPropertyName):
+			case ShadowEffect.ColorPropertyName:
 				UpdateColor(View);
 				break;
-			case nameof(ShadowEffect.OpacityPropertyName):
+			case ShadowEffect.OpacityPropertyName:
 				UpdateOpacity(View);
 				break;
-			case nameof(ShadowEffect.RadiusPropertyName):
+			case ShadowEffect.RadiusPropertyName:
 				UpdateRadius(View);
 				break;
-			case nameof(ShadowEffect.OffsetXPropertyName):
-			case nameof(ShadowEffect.OffsetYPropertyName):
+			case ShadowEffect.OffsetXPropertyName:
+			case ShadowEffect.OffsetYPropertyName:
 				UpdateOffset(View);
+				break;
+			case nameof(VisualElement.Width):
+			case nameof(VisualElement.Height):
+			case nameof(VisualElement.BackgroundColor):
+			case nameof(IBorderElement.CornerRadius):
+				Update(View);
 				break;
 		}
 	}
@@ -102,6 +113,14 @@ namespace Xamarin.CommunityToolkit.macOS.Effects
 	{
 		if (view.Layer != null)
 			view.Layer.ShadowOffset = new CGSize((double)ShadowEffect.GetOffsetX(Element), (double)ShadowEffect.GetOffsetY(Element));
+	}
+
+	void Update(in NativeView view)
+	{
+		UpdateColor(view);
+		UpdateOpacity(view);
+		UpdateRadius(view);
+		UpdateOffset(view);
 	}
 }
 }
